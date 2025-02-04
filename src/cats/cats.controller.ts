@@ -1,12 +1,28 @@
-
-import { Controller, Get, Query, Post, Body, Put, Param, Delete, Res, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  Res,
+  HttpStatus,
+  HttpException,
+  UseFilters,
+} from '@nestjs/common';
 import { CreateCatDto, UpdateCatDto, ListAllEntitiesDto } from './dto';
 import { CatsService } from './cats.service';
 import { Cat } from './interfaces/cat.interface';
-import { Response } from 'express';  // 確保這個導入
+import { Response } from 'express';
+import { HttpExceptionFilter } from '../exceptions/http-exception.filter';
+import { HttpBaseExceptionFilter } from '../exceptions/http-base-exception.filter';
+import { ForbiddenException } from '../exceptions/forbidden.exception'; // 確保這個導入
 
 // {domain}/cats
 @Controller('cats')
+@UseFilters(HttpBaseExceptionFilter)
 export class CatsController {
   constructor(private catsService: CatsService) {}
 
@@ -31,6 +47,15 @@ export class CatsController {
 
   @Get(':id')
   findOne(@Param('id') id: string, @Res() res: Response) {
+    if (id === 'a') {
+      throw new ForbiddenException();
+    }
+    if (id === 'b') {
+      throw new HttpException('Forbidden2', HttpStatus.FORBIDDEN);
+    }
+    if (id === 'c') {
+      throw new Error('Unexpected Error');
+    }
     return res.status(200).json({
       message: `This action returns a #${id} cat`,
     });
