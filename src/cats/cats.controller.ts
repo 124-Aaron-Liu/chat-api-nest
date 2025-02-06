@@ -11,10 +11,10 @@ import {
   HttpStatus,
   HttpException,
   UseFilters,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { CreateCatDto, UpdateCatDto, ListAllEntitiesDto } from './dto';
 import { CatsService } from './cats.service';
-import { Cat } from './interfaces/cat.interface';
 import { Response } from 'express';
 import { HttpExceptionFilter } from '../exceptions/http-exception.filter';
 import { HttpBaseExceptionFilter } from '../exceptions/http-base-exception.filter';
@@ -27,22 +27,19 @@ export class CatsController {
   constructor(private catsService: CatsService) {}
 
   @Post()
-  async create(@Body() createCatDto: CreateCatDto) {
+  create(@Body() createCatDto: CreateCatDto) {
     this.catsService.create(createCatDto);
   }
 
-  // @Get()
-  // findAll(@Query() query: ListAllEntitiesDto, @Res() res: Response) {
-  //   const { page, limit } = query;
-  //   // 直接使用 res 返回響應
-  //   return res.status(200).json({
-  //     message: `Fetching cats, page: ${page}, limit: ${limit}`,
-  //   });
-  // }
-
   @Get()
-  async findAll(): Promise<Cat[]> {
-    return this.catsService.findAll();
+  findAll(@Query() query: ListAllEntitiesDto, @Res() res: Response) {
+    const { page, limit } = query;
+    const cats = this.catsService.findAll();
+    // 直接使用 res 返回響應
+    return res.status(200).json({
+      message: `Fetching cats, page: ${page}, limit: ${limit}`,
+      cats,
+    });
   }
 
   @Get(':id')
@@ -62,8 +59,22 @@ export class CatsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateCatDto: UpdateCatDto) {
-    return `This action updates a #${id} cat`;
+  update(
+    // @Param('id', ParseIntPipe) id: number,
+    // we can instead pass an in-place instance.
+    // Passing an in-place instance is useful if we want to customize the built-in pipe's behavior by passing options
+    @Param(
+      'id',
+      new ParseIntPipe({ errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE }),
+    )
+    id: number,
+    @Body() updateCatDto: UpdateCatDto,
+    @Res() res: Response,
+  ) {
+    return res.status(200).json({
+      message: `This action updates a #${id} `,
+      updateCatDto,
+    });
   }
 
   @Delete(':id')
